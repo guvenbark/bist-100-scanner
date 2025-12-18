@@ -108,7 +108,7 @@ if strategy_mode == "21/55 EMA & HA":
             # Check Strategy
             if df is not None:
                 res = check_strategy_ema(df, pullback_tolerance=tolerance)
-                if res['signal']:
+                if res and res['signal']:
                     results.append({
                         "Symbol": symbol,
                         "Price": res['last_price'],
@@ -242,7 +242,7 @@ elif strategy_mode == "RSI V3 (Kar Optimizasyonu)":
             df = get_stock_data(symbol, period=period, interval=interval)
             if df is not None:
                 res = check_rsi_strategy_v3(df)
-                if res['signal']:
+                if res and res['signal']:
                     results.append({
                         "Symbol": symbol,
                         "Price": res['last_price'],
