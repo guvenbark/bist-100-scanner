@@ -47,7 +47,7 @@ st.session_state.selected_strategy = strategy_mode
 
 # Common Data Settings
 st.sidebar.header("⚙️ Genel Ayarlar")
-period = st.sidebar.selectbox("Veri Periyodu", ["6mo", "1y", "2y", "5y"], index=1)
+period = st.sidebar.selectbox("Veri Periyodu", ["3mo", "6mo", "1y"], index=1)
 # Enforced Daily Timeframe
 interval = "1d"
 st.sidebar.info("📅 Zaman Dilimi: **Günlük (Daily)**")
