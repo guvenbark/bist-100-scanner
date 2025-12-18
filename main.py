@@ -353,7 +353,7 @@ elif strategy_mode == "Trend Dönüşü Stratejisi":
                     
                     fig.add_trace(go.Scatter(
                         x=df_chart.index, y=df_chart['EMA_50'],
-                        name='EMA 50', line=dict(color='black', width=2)
+                        name='EMA 50', line=dict(color='orange', width=2)
                     ), row=1, col=1)
                     
                     # Hacim
