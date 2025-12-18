@@ -306,10 +306,75 @@ elif strategy_mode == "Trend Dönüşü Stratejisi":
             st.success(f"✅ {len(results)} trend dönüşü sinyali bulundu!")
             st.dataframe(pd.DataFrame(results), use_container_width=True)
             
+            # Grafik Görselleştirme
+            st.markdown("---")
+            st.subheader("📈 Teknik Grafik")
+            
+            selected_stock = st.selectbox(
+                "Hisse Seçin:", 
+                [r["Symbol"] for r in results],
+                key="trend_reversal_chart"
+            )
+            
+            if selected_stock:
+                df_chart = get_stock_data(selected_stock, period=period, interval=interval)
+                
+                if df_chart is not None:
+                    # Heikin Ashi & EMA hesapla
+                    from utils.indicators import calculate_heikin_ashi, calculate_ema
+                    ha = calculate_heikin_ashi(df_chart)
+                    df_chart = pd.concat([df_chart, ha], axis=1)
+                    df_chart['EMA_20'] = calculate_ema(df_chart, length=20)
+                    df_chart['EMA_50'] = calculate_ema(df_chart, length=50)
+                    
+                    # Grafik oluştur
+                    fig = make_subplots(
+                        rows=2, cols=1, 
+                        row_heights=[0.7, 0.3],
+                        vertical_spacing=0.05,
+                        shared_xaxes=True
+                    )
+                    
+                    # Heikin Ashi
+                    fig.add_trace(go.Candlestick(
+                        x=df_chart.index,
+                        open=df_chart['HA_open'],
+                        high=df_chart['HA_high'],
+                        low=df_chart['HA_low'],
+                        close=df_chart['HA_close'],
+                        name='Heikin Ashi'
+                    ), row=1, col=1)
+                    
+                    # EMA'lar
+                    fig.add_trace(go.Scatter(
+                        x=df_chart.index, y=df_chart['EMA_20'],
+                        name='EMA 20', line=dict(color='blue', width=2)
+                    ), row=1, col=1)
+                    
+                    fig.add_trace(go.Scatter(
+                        x=df_chart.index, y=df_chart['EMA_50'],
+                        name='EMA 50', line=dict(color='black', width=2)
+                    ), row=1, col=1)
+                    
+                    # Hacim
+                    colors = ['green' if df_chart['Close'].iloc[i] >= df_chart['Open'].iloc[i] 
+                             else 'red' for i in range(len(df_chart))]
+                    fig.add_trace(go.Bar(
+                        x=df_chart.index, y=df_chart['Volume'],
+                        marker_color=colors, showlegend=False
+                    ), row=2, col=1)
+                    
+                    fig.update_layout(
+                        title=f'{selected_stock} - Trend Dönüşü Analizi',
+                        height=600,
+                        xaxis_rangeslider_visible=False
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
+            
             st.info("""
             💡 **Strateji Notu:**  
             Trend dönüşü sinyalleri risklidir ama erken giriş fırsatı sunar.
-            - Stop loss'u mutlaka kullanın (EMA 55)
+            - Stop loss'u mutlaka kullanın (EMA 20)
             - Pozisyon boyutunu küçük tutun (%10-15)
             - Hacim artışını takip edin
             """)
