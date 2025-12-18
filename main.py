@@ -270,7 +270,7 @@ elif strategy_mode == "Trend Dönüşü Stratejisi":
     2. **Güç Kontrolü**: EMA'lar arası mesafe yeterli (yatay piyasa değil)
     3. **Pullback**: Fiyat EMA 20'ye geri çekilmiş
     4. **Dönüş Mumu**: Heikin Ashi kırmızıdan yeşile dönüyor
-    5. **Hacim Onayı**: İşlem hacmi 20 günlük ortalamanın %120+ üstünde
+    5. **Hacim Onayı**: İşlem hacmi 20 günlük ortalamanın %110+ üstünde
     
     ### ⚙️ Risk Yönetimi:
     - **Stop Loss**: EMA 20 seviyesi

@@ -251,7 +251,7 @@ def check_rsi_strategy_v3(df, rsi_period=14):
     
     return {'signal': False, 'details': reason}
 
-def check_trend_reversal_strategy(df, ema_distance_threshold=0.02, volume_multiplier=1.2, pullback_tolerance=0.015):
+def check_trend_reversal_strategy(df, ema_distance_threshold=0.02, volume_multiplier=1.1, pullback_tolerance=0.015):
     """
     Trend Dönüşü Stratejisi (Kullanıcı Tanımlı):
     
