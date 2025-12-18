@@ -1,0 +1,13 @@
+# Backtest HTML raporları (büyük dosyalar)
+backtest_*.html
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# VS Code
+.vscode/
+
+# Diğer
+.DS_Store
