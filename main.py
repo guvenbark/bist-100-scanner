@@ -12,7 +12,16 @@ from utils.data_fetcher import get_stock_data, BIST_100_SYMBOLS, get_all_bist_10
 from utils.strategy import check_strategy as check_strategy_ema
 from utils.strategy import check_rsi_strategy_v2, check_rsi_strategy_v3
 
-st.set_page_config(page_title="BIST ALIM SATIM STRATEJI", layout="wide")
+st.set_page_config(page_title="BIST Tarama ve Analiz Aracı", layout="wide")
+
+# Ana başlık ve disclaimer
+st.title("📈 BIST Tarama ve Analiz Aracı")
+st.warning("""
+⚠️ **UYARI:** Bu araç bir karar destek sistemidir, yatırım tavsiyesi değildir. 
+Geçmiş performans gelecek getiriyi garanti etmez. Yatırım kararlarınızı kendi risk toleransınıza göre veriniz.
+""")
+
+st.markdown("---")
 
 # Initialize session state
 if 'auto_scan_enabled' not in st.session_state:

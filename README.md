@@ -1,16 +1,28 @@
-# 📈 BIST ALIM SATIM STRATEJİ
+# 📈 BIST TARAMA VE ANALİZ ARACI
 
-BIST 100 hisselerini otomatik olarak tarayan, 21/55 EMA pullback stratejisine göre alım sinyalleri bulan web uygulaması.
+BIST 100 hisselerini teknik göstergelere göre tarayan, yatırım kararlarınızı destekleyen bir analiz aracı.
+
+## ⚠️ ÖNEMLİ UYARI
+
+Bu araç bir **karar destek sistemi**dir. Yatırım tavsiyesi değildir.
+- ✅ Teknik göstergelere göre sinyaller sunar
+- ✅ Backtest sonuçlarını gösterir
+- ❌ Otomatik alım satım yapmaz
+- ❌ Garanti kar vaat etmez
+
+**Risk Uyarısı:** Geçmiş performans gelecek getiriyi garanti etmez. Yatırım kararlarınızı profesyonel danışmanlık alarak veriniz.
 
 ## 🎯 Özellikler
 
-- **Otomatik Periyodik Tarama**: 5-60 dakika aralıklarla otomatik tarama
-- **Strateji Kuralları**:
-  - 21 EMA > 55 EMA (Trend)
-  - Fiyat 21 EMA'ya geri çekilme (Pullback)
-  - Heikin Ashi mumunun yeşile dönmesi (Sinyal)
+- **3 Farklı Strateji:**
+  - 21/55 EMA & Heikin Ashi (Trend Takip)
+  - RSI V2 (Filtreli Momentum)
+  - RSI V3 (Kar Optimizasyonu - ADX + Trailing Stop)
+
+- **Otomatik Periyodik Tarama**: 5-60 dakika aralıklarla
 - **İnteraktif Grafikler**: Plotly ile detaylı analiz
-- **Türkçe Arayüz**: Tam Türkçe kullanıcı deneyimi
+- **Backtest Sonuçları**: Geçmiş performans görüntüleme
+- **Türkçe Arayüz**: Tam Türkçe destek
 
 ## 🚀 Lokal Kurulum
 
@@ -24,22 +36,12 @@ streamlit run main.py
 
 Tarayıcınızda `http://localhost:8501` açılacaktır.
 
-## 🌐 Online Kullanım
-
-Bu uygulama Streamlit Cloud üzerinde yayınlanabilir:
-
-1. Bu repository'yi GitHub'a yükleyin
-2. [Streamlit Cloud](https://streamlit.io/cloud)'a gidin
-3. Repository'nizi bağlayın
-4. `main.py` dosyasını seçin
-5. Deploy!
-
 ## 📊 Kullanım
 
-1. **Otomatik Tarama**: Sol menüden "Otomatik Tarama Aktif" seçeneğini açın
-2. **Tarama Aralığı**: İstediğiniz süreyi seçin (5, 10, 15, 30, 60 dakika)
-3. **Manuel Tarama**: "Manuel Tarama Yap" butonu ile anında tarayın
-4. **Grafik Görüntüleme**: Bulunan hisseleri seçerek detaylı analiz edin
+1. Sol menüden **strateji seçin**
+2. **Manuel Tarama** yapın veya otomatik taramayı aktif edin
+3. Bulunan sinyalleri **kendi analizinizle** birleştirin
+4. **Kendi risk yönetiminize** göre karar verin
 
 ## 🛠️ Teknolojiler
 
@@ -48,6 +50,15 @@ Bu uygulama Streamlit Cloud üzerinde yayınlanabilir:
 - **Pandas** - Veri işleme
 - **Plotly** - İnteraktif grafikler
 
+## 📈 Backtest Sonuçları Hakkında
+
+Sistemde bulunan backtest sonuçları **geçmiş simülasyonlardır**:
+- Gerçek ticaret sonuçları değildir
+- Slippage, komisyon içermez
+- Risk yönetimi kullanıcıya aittir
+
+**Ortalama Performans:** Test edilen hisselerde %0-20 aralığında değişken getiriler
+
 ## 📝 Lisans
 
-MIT License - Ticari ve kişisel kullanım için özgür.
+MIT License - Eğitim ve araştırma amaçlıdır.
