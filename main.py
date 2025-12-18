@@ -40,8 +40,8 @@ st.sidebar.markdown("---")
 # Strategy Selection
 strategy_mode = st.sidebar.radio(
     "Strateji Seçimi",
-    ["21/55 EMA & HA", "RSI > 50 (V1-V2)", "RSI V3 (Kar Optimizasyonu)"],
-    index=2
+    ["21/55 EMA & HA", "RSI V3 (Kar Optimizasyonu)"],
+    index=1
 )
 st.session_state.selected_strategy = strategy_mode
 
