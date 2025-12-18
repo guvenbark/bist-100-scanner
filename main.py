@@ -261,14 +261,23 @@ elif strategy_mode == "RSI V3 (Kar Optimizasyonu)":
     # Show cached logic (Brief version for speed, can be expanded strictly like the Main Strategy)
 
 elif strategy_mode == "Trend Dönüşü Stratejisi":
-    st.title("🔄 Trend Dönüşü Stratejisi")
+    st.title("🔄 Trend Dönüşü Stratejisi (Heikin Ashi)")
     st.markdown("""
-    Bu strateji **düşüş trendinden yükseliş trendine geçişi** yakalar:
-    1. **EMA Golden Cross**: 21 EMA yukarı kesmiş 55 EMA'yı (son 5 günde)
-    2. **RSI Toparlanması**: RSI oversold bölgesinden (30 altı) çıkmış, şimdi 40+ seviyesinde
-    3. **Hacim Onayı**: İşlem hacmi 20 günlük ortalamanın %120 üstünde
+    Bu strateji **Heikin Ashi** mumlarıyla **güçlü yükseliş trendlerinde pullback'leri** yakalar:
     
-    **Hedef:** Dip yapmış hisselerde erken giriş yakalama!
+    ### 📋 Strateji Kuralları:
+    1. **Trend Teyidi**: EMA 20 > EMA 50 (yükseliş trendi)
+    2. **Güç Kontrolü**: EMA'lar arası mesafe yeterli (yatay piyasa değil)
+    3. **Pullback**: Fiyat EMA 20'ye geri çekilmiş
+    4. **Dönüş Mumu**: Heikin Ashi kırmızıdan yeşile dönüyor
+    5. **Hacim Onayı**: İşlem hacmi 20 günlük ortalamanın %120+ üstünde
+    
+    ### ⚙️ Risk Yönetimi:
+    - **Stop Loss**: EMA 20 seviyesi
+    - **Çıkış**: Fiyat EMA 50'yi aşağı kırdığında
+    
+    ### ⚠️ Önemli: 
+    Bu strateji sadece **ALIM** için kullanılır! Güçlü trendlerde düşük riskli giriş noktaları yakalar.
     """)
     
     manual_scan = st.sidebar.button("🔍 Trend Dönüşü Tara")

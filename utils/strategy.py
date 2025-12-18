@@ -251,84 +251,93 @@ def check_rsi_strategy_v3(df, rsi_period=14):
     
     return {'signal': False, 'details': reason}
 
-def check_trend_reversal_strategy(df, rsi_period=14, volume_threshold=1.2):
+def check_trend_reversal_strategy(df, ema_distance_threshold=0.02, volume_multiplier=1.2, pullback_tolerance=0.015):
     """
-    Trend Dönüşü Stratejisi (Trend Reversal):
-    Düşüş trendinden yükseliş trendine geçişi yakalar.
+    Trend Dönüşü Stratejisi (Kullanıcı Tanımlı):
     
-    Kriterler:
-    1. EMA 21 yukarı kesmiş EMA 55'i (son 5 günde)
-    2. RSI oversold bölgesinden çıkmış (30'dan 40+ seviyesine)
-    3. İşlem hacmi ortalamanın üstünde (güçlü alıcı ilgisi)
+    KURALLAR:
+    1. Heikin Ashi mumlar kullanılır
+    2. EMA 20 > EMA 50 (yükseliş trendi) + EMA'lar arası mesafe yeterli olmalı
+    3. Fiyat EMA 20'ye pullback yapmalı
+    4. Dönüş mumu (HA yeşile döner) + Hacim > ortalama
+    5. Stop Loss: EMA 20
+    6. Çıkış Sinyali: Fiyat EMA 50'yi aşağı kırarsa
     """
-    if df is None or len(df) < 60:
-        return {'signal': False, 'details': 'Insufficient data'}
+    if df is None or len(df) < 55:
+        return {'signal': False, 'details': 'Yetersiz veri'}
 
-    # Calculate indicators
-    df['EMA_21'] = calculate_ema(df, length=21)
-    df['EMA_55'] = calculate_ema(df, length=55)
+    # 1. Heikin Ashi Hesapla
+    ha = calculate_heikin_ashi(df)
+    df = pd.concat([df, ha], axis=1)
     
-    # RSI
-    delta = df['Close'].diff()
-    gain = (delta.where(delta > 0, 0)).ewm(alpha=1/rsi_period, adjust=False).mean()
-    loss = (-delta.where(delta < 0, 0)).ewm(alpha=1/rsi_period, adjust=False).mean()
-    rs = gain / loss.replace(0, np.nan)
-    df['RSI'] = 100 - (100 / (1 + rs))
+    # 2. EMA'ları Hesapla
+    df['EMA_20'] = calculate_ema(df, length=20)
+    df['EMA_50'] = calculate_ema(df, length=50)
     
-    # Volume average (20 days)
+    # 3. Hacim Ortalaması (20 günlük)
     if 'Volume' in df.columns:
         df['Volume_MA'] = df['Volume'].rolling(window=20).mean()
+    else:
+        return {'signal': False, 'details': 'Hacim verisi yok'}
     
     curr = df.iloc[-1]
     prev = df.iloc[-2]
     
-    # Kriter 1: EMA Crossover (son 5 günde golden cross)
-    crossover_detected = False
+    # KURAL 2: Trend Kontrolü (EMA 20 > EMA 50)
+    uptrend = curr['EMA_20'] > curr['EMA_50']
+    
+    if not uptrend:
+        return {'signal': False, 'details': 'Düşüş trendi (EMA 20 < EMA 50)'}
+    
+    # EMA'lar arası mesafe kontrolü (iç içe değil mi?)
+    ema_distance = abs(curr['EMA_20'] - curr['EMA_50']) / curr['EMA_50']
+    
+    if ema_distance < ema_distance_threshold:
+        return {'signal': False, 'details': f'EMA\'lar iç içe (mesafe: %{ema_distance*100:.1f})'}
+    
+    # KURAL 3: Pullback Kontrolü (Son 5 günde fiyat EMA 20'ye yaklaşmış mı?)
+    pullback_detected = False
     for i in range(1, 6):
         if len(df) < i + 1:
             break
-        past = df.iloc[-(i+1)]
-        past_prev = df.iloc[-(i+2)] if len(df) > i+1 else None
+        past_row = df.iloc[-i]
+        past_low = past_row['Low']
+        past_ema20 = past_row['EMA_20']
         
-        if past_prev is not None:
-            # EMA 21 yukarı kesmiş EMA 55'i
-            if past['EMA_21'] > past['EMA_55'] and past_prev['EMA_21'] <= past_prev['EMA_55']:
-                crossover_detected = True
-                break
+        # Fiyat EMA 20'ye dokunmuş veya çok yaklaşmış
+        if past_low <= past_ema20 * (1 + pullback_tolerance):
+            pullback_detected = True
+            break
     
-    # Kriter 2: RSI toparlanması (oversold'dan çıkış)
-    rsi_recovery = False
-    # Son 10 günde RSI 30'un altına düşmüş mü kontrol et
-    recent_oversold = any(df['RSI'].tail(10) < 30)
-    # Şimdi RSI 40+ seviyesinde mi
-    current_rsi_ok = curr['RSI'] > 40
+    if not pullback_detected:
+        return {'signal': False, 'details': 'EMA 20\'ye pullback yok'}
     
-    if recent_oversold and current_rsi_ok:
-        rsi_recovery = True
+    # KURAL 4a: Dönüş Mumu (HA Yeşile Dönüş)
+    curr_ha_green = curr['HA_close'] > curr['HA_open']
+    prev_ha_red = prev['HA_close'] <= prev['HA_open']
     
-    # Kriter 3: Hacim kontrolü
-    volume_ok = True
-    if 'Volume' in df.columns and 'Volume_MA' in df.columns:
-        volume_ok = curr['Volume'] > (curr['Volume_MA'] * volume_threshold)
+    ha_reversal = curr_ha_green and prev_ha_red
     
-    # Sinyal: Tüm kriterler sağlanmalı
-    if crossover_detected and rsi_recovery and volume_ok:
-        return {
-            'signal': True,
-            'details': f'Trend Dönüşü! (RSI: {curr["RSI"]:.1f}, EMA Golden Cross)',
-            'last_price': curr['Close'],
-            'stop_loss': curr['EMA_55'],  # EMA 55 stop loss olarak
-            'take_profit': curr['Close'] * 1.12  # %12 kar hedefi
-        }
+    if not ha_reversal:
+        if curr_ha_green:
+            return {'signal': False, 'details': 'HA yeşil ama dönüş yok (devam ediyor)'}
+        else:
+            return {'signal': False, 'details': 'HA kırmızı (henüz dönüş yok)'}
     
-    # Hangi kriter eksik
-    if not crossover_detected:
-        reason = "EMA crossover yok"
-    elif not rsi_recovery:
-        reason = f"RSI toparlanma yok (RSI: {curr['RSI']:.1f})"
-    elif not volume_ok:
-        reason = "Hacim yetersiz"
-    else:
-        reason = "Sinyal yok"
+    # KURAL 4b: Hacim Kontrolü
+    volume_ok = curr['Volume'] > (curr['Volume_MA'] * volume_multiplier)
     
-    return {'signal': False, 'details': reason}
+    if not volume_ok:
+        return {'signal': False, 'details': f'Hacim yetersiz ({curr["Volume"]/curr["Volume_MA"]:.1f}x ortalama)'}
+    
+    # TÜM KRITERLER SAĞLANDI - AL SİNYALİ!
+    return {
+        'signal': True,
+        'details': f'✅ AL! (HA Dönüş + Pullback + Hacim: {curr["Volume"]/curr["Volume_MA"]:.1f}x)',
+        'last_price': curr['Close'],
+        'stop_loss': curr['EMA_20'],  # EMA 20 stop loss
+        'take_profit': None,  # Kullanıcı belirledi: EMA 50'yi aşağı kırana kadar tut
+        'exit_signal': 'Fiyat EMA 50 altına düşerse SAT',
+        'ema_20': curr['EMA_20'],
+        'ema_50': curr['EMA_50']
+    }
