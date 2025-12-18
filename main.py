@@ -10,7 +10,7 @@ from utils.data_fetcher import get_stock_data, BIST_100_SYMBOLS, get_all_bist_10
 # Import strategies
 # Import strategies
 from utils.strategy import check_strategy as check_strategy_ema
-from utils.strategy import check_rsi_strategy_v2, check_rsi_strategy_v3
+from utils.strategy import check_rsi_strategy_v2, check_rsi_strategy_v3, check_trend_reversal_strategy
 
 st.set_page_config(page_title="BIST Tarama ve Analiz Aracı", layout="wide")
 
@@ -40,7 +40,7 @@ st.sidebar.markdown("---")
 # Strategy Selection
 strategy_mode = st.sidebar.radio(
     "Strateji Seçimi",
-    ["21/55 EMA & HA", "RSI V3 (Kar Optimizasyonu)"],
+    ["21/55 EMA & HA", "RSI V3 (Kar Optimizasyonu)", "Trend Dönüşü Stratejisi"],
     index=1
 )
 st.session_state.selected_strategy = strategy_mode
@@ -259,4 +259,51 @@ elif strategy_mode == "RSI V3 (Kar Optimizasyonu)":
             st.warning("⚠️ Kriterlere uyan hisse bulunamadı.")
             
     # Show cached logic (Brief version for speed, can be expanded strictly like the Main Strategy)
+
+elif strategy_mode == "Trend Dönüşü Stratejisi":
+    st.title("🔄 Trend Dönüşü Stratejisi")
+    st.markdown("""
+    Bu strateji **düşüş trendinden yükseliş trendine geçişi** yakalar:
+    1. **EMA Golden Cross**: 21 EMA yukarı kesmiş 55 EMA'yı (son 5 günde)
+    2. **RSI Toparlanması**: RSI oversold bölgesinden (30 altı) çıkmış, şimdi 40+ seviyesinde
+    3. **Hacim Onayı**: İşlem hacmi 20 günlük ortalamanın %120 üstünde
+    
+    **Hedef:** Dip yapmış hisselerde erken giriş yakalama!
+    """)
+    
+    manual_scan = st.sidebar.button("🔍 Trend Dönüşü Tara")
+    
+    if manual_scan:
+        st.write(f"{len(BIST_100_SYMBOLS)} hisse taranıyor... Lütfen bekleyin.")
+        progress_bar = st.progress(0)
+        results = []
+        
+        for i, symbol in enumerate(BIST_100_SYMBOLS):
+            df = get_stock_data(symbol, period=period, interval=interval)
+            if df is not None:
+                res = check_trend_reversal_strategy(df)
+                if res and res['signal']:
+                    results.append({
+                        "Symbol": symbol,
+                        "Fiyat": res['last_price'],
+                        "Stop Loss (EMA55)": res['stop_loss'],
+                        "Detay": res['details']
+                    })
+            progress_bar.progress((i + 1) / len(BIST_100_SYMBOLS))
+        
+        progress_bar.empty()
+        
+        if results:
+            st.success(f"✅ {len(results)} trend dönüşü sinyali bulundu!")
+            st.dataframe(pd.DataFrame(results), use_container_width=True)
+            
+            st.info("""
+            💡 **Strateji Notu:**  
+            Trend dönüşü sinyalleri risklidir ama erken giriş fırsatı sunar.
+            - Stop loss'u mutlaka kullanın (EMA 55)
+            - Pozisyon boyutunu küçük tutun (%10-15)
+            - Hacim artışını takip edin
+            """)
+        else:
+            st.warning("⚠️ Kriterlere uyan hisse bulunamadı.")
 

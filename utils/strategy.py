@@ -250,3 +250,85 @@ def check_rsi_strategy_v3(df, rsi_period=14):
     else: reason = f"RSI: {curr['RSI']:.2f}"
     
     return {'signal': False, 'details': reason}
+
+def check_trend_reversal_strategy(df, rsi_period=14, volume_threshold=1.2):
+    """
+    Trend Dönüşü Stratejisi (Trend Reversal):
+    Düşüş trendinden yükseliş trendine geçişi yakalar.
+    
+    Kriterler:
+    1. EMA 21 yukarı kesmiş EMA 55'i (son 5 günde)
+    2. RSI oversold bölgesinden çıkmış (30'dan 40+ seviyesine)
+    3. İşlem hacmi ortalamanın üstünde (güçlü alıcı ilgisi)
+    """
+    if df is None or len(df) < 60:
+        return {'signal': False, 'details': 'Insufficient data'}
+
+    # Calculate indicators
+    df['EMA_21'] = calculate_ema(df, length=21)
+    df['EMA_55'] = calculate_ema(df, length=55)
+    
+    # RSI
+    delta = df['Close'].diff()
+    gain = (delta.where(delta > 0, 0)).ewm(alpha=1/rsi_period, adjust=False).mean()
+    loss = (-delta.where(delta < 0, 0)).ewm(alpha=1/rsi_period, adjust=False).mean()
+    rs = gain / loss.replace(0, np.nan)
+    df['RSI'] = 100 - (100 / (1 + rs))
+    
+    # Volume average (20 days)
+    if 'Volume' in df.columns:
+        df['Volume_MA'] = df['Volume'].rolling(window=20).mean()
+    
+    curr = df.iloc[-1]
+    prev = df.iloc[-2]
+    
+    # Kriter 1: EMA Crossover (son 5 günde golden cross)
+    crossover_detected = False
+    for i in range(1, 6):
+        if len(df) < i + 1:
+            break
+        past = df.iloc[-(i+1)]
+        past_prev = df.iloc[-(i+2)] if len(df) > i+1 else None
+        
+        if past_prev is not None:
+            # EMA 21 yukarı kesmiş EMA 55'i
+            if past['EMA_21'] > past['EMA_55'] and past_prev['EMA_21'] <= past_prev['EMA_55']:
+                crossover_detected = True
+                break
+    
+    # Kriter 2: RSI toparlanması (oversold'dan çıkış)
+    rsi_recovery = False
+    # Son 10 günde RSI 30'un altına düşmüş mü kontrol et
+    recent_oversold = any(df['RSI'].tail(10) < 30)
+    # Şimdi RSI 40+ seviyesinde mi
+    current_rsi_ok = curr['RSI'] > 40
+    
+    if recent_oversold and current_rsi_ok:
+        rsi_recovery = True
+    
+    # Kriter 3: Hacim kontrolü
+    volume_ok = True
+    if 'Volume' in df.columns and 'Volume_MA' in df.columns:
+        volume_ok = curr['Volume'] > (curr['Volume_MA'] * volume_threshold)
+    
+    # Sinyal: Tüm kriterler sağlanmalı
+    if crossover_detected and rsi_recovery and volume_ok:
+        return {
+            'signal': True,
+            'details': f'Trend Dönüşü! (RSI: {curr["RSI"]:.1f}, EMA Golden Cross)',
+            'last_price': curr['Close'],
+            'stop_loss': curr['EMA_55'],  # EMA 55 stop loss olarak
+            'take_profit': curr['Close'] * 1.12  # %12 kar hedefi
+        }
+    
+    # Hangi kriter eksik
+    if not crossover_detected:
+        reason = "EMA crossover yok"
+    elif not rsi_recovery:
+        reason = f"RSI toparlanma yok (RSI: {curr['RSI']:.1f})"
+    elif not volume_ok:
+        reason = "Hacim yetersiz"
+    else:
+        reason = "Sinyal yok"
+    
+    return {'signal': False, 'details': reason}
